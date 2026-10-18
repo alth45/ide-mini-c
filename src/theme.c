@@ -111,12 +111,8 @@ LRESULT theme_on_settingchange(HWND h, WPARAM w, LPARAM l) {
 static BOOL get_item_rect(HWND hTab, int idx, RECT *rc) {
     int n = TabCtrl_GetItemCount(hTab);
     if (idx < 0 || idx >= n) return FALSE;
-    RECT r;
-    if (!TabCtrl_GetItemRect(hTab, idx, &r)) return FALSE;
-    POINT pt = { r.left, r.top };
-    ScreenToClient(hTab, &pt);
-    SetRect(rc, pt.x, pt.y, pt.x + (r.right - r.left), pt.y + (r.bottom - r.top));
-    return TRUE;
+    if (!TabCtrl_GetItemRect(hTab, idx, rc)) return FALSE;
+    return TRUE;   /* sudah dalam client coords */
 }
 
 static RECT close_btn_rect(HWND hTab, int idx) {
@@ -214,7 +210,10 @@ static void erase_strip(HWND hTab, HDC hdc) {
 /* ---------- Subclass TABWINDOW ---------- */
 static LRESULT CALLBACK TabSubProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     switch (m) {
+    
     case WM_MOUSEMOVE: {
+        TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, h, 0 };
+        TrackMouseEvent(&tme);
         POINT pt = { GET_X_LPARAM(l), GET_Y_LPARAM(l) };
         int hit = TabCtrl_HitTest(h, &pt);
         int hot = -1;
@@ -281,9 +280,9 @@ static LRESULT CALLBACK TabSubProc(HWND h, UINT m, WPARAM w, LPARAM l) {
         }
         break;
     }
-    case WM_DRAWITEM:
-        draw_tab_item((LPDRAWITEMSTRUCT)l);
-        return TRUE;
+        
+    draw_tab_item((LPDRAWITEMSTRUCT)l);
+   
     case WM_ERASEBKGND:
         erase_strip(h, (HDC)w);
         return 1;
@@ -318,4 +317,12 @@ void theme_apply(HWND hMain) {
             InvalidateRect(g_tabs[i].hEdit, NULL, TRUE);
 
     theme_on_settingchange(hMain, 0, 0);
+}
+
+
+BOOL theme_handle_drawitem(LPDRAWITEMSTRUCT dis) {
+    if (!dis || dis->CtlType != ODT_TAB || dis->hwndItem != g_hTab)
+        return FALSE;
+    draw_tab_item(dis);
+    return TRUE;
 }

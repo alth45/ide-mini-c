@@ -149,6 +149,10 @@ static LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
             return 0;
         }
         break;
+        
+    case WM_DRAWITEM:
+        if (theme_handle_drawitem((LPDRAWITEMSTRUCT)l)) return TRUE;
+        break;
 
     case WM_NOTIFY: {
         NMHDR *nh = (NMHDR *)l;

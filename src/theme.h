@@ -22,6 +22,8 @@ typedef struct {
 } ThemePalette;
 
 extern BOOL g_darkMode;
+/* Dipanggil dari WM_DRAWITEM di WndProc parent (owner-drawn tab) */
+BOOL theme_handle_drawitem(LPDRAWITEMSTRUCT dis);
 
 const ThemePalette *theme_palette(void);
 
